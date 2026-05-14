@@ -44,12 +44,13 @@ jobs:
         run: npm ci
 
       # 4. Vite 빌드
-      #    Supabase 환경 변수는 GitHub 레포 > Settings > Secrets and variables > Actions 에서 등록하세요.
+      #    환경 변수는 GitHub 레포 > Settings > Secrets and variables > Actions 에서 등록하세요.
       - name: Build
         run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_FINNHUB_API_KEY: ${{ secrets.VITE_FINNHUB_API_KEY }}
 
       # 5. GitHub Pages 아티팩트 업로드
       - name: Setup Pages
