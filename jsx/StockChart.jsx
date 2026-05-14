@@ -10,9 +10,9 @@ import {
   ReferenceLine,
 } from 'recharts'
 
-const UP_COLOR   = '#22c55e'
-const DOWN_COLOR = '#ef4444'
-const GRID_COLOR = 'rgba(255,255,255,0.06)'
+const UP_COLOR   = '#16a34a'
+const DOWN_COLOR = '#dc2626'
+const GRID_COLOR = 'rgba(0,0,0,0.06)'
 
 function formatTime(ms, resolution) {
   const d = new Date(ms)
@@ -34,61 +34,57 @@ function CustomTooltip({ active, payload, label, resolution }) {
 
   return (
     <div style={{
-      background: '#1a2119',
-      border: '1px solid rgba(255,255,255,0.12)',
+      background: '#fff',
+      border: '1px solid #000',
       borderRadius: 8,
       padding: '10px 14px',
-      fontSize: 12,
+      fontSize: 11,
       lineHeight: 1.8,
       minWidth: 160,
+      fontFamily: '"JetBrains Mono", monospace',
     }}>
-      <p style={{ color: '#9ca3af', marginBottom: 6 }}>{formatTime(label, resolution)}</p>
-      <p style={{ color: '#d1d5db' }}>시가  <span style={{ color: '#fff', float: 'right', marginLeft: 24 }}>{formatPrice(d.open)}</span></p>
-      <p style={{ color: '#d1d5db' }}>고가  <span style={{ color: UP_COLOR,   float: 'right' }}>{formatPrice(d.high)}</span></p>
-      <p style={{ color: '#d1d5db' }}>저가  <span style={{ color: DOWN_COLOR, float: 'right' }}>{formatPrice(d.low)}</span></p>
-      <p style={{ color: '#d1d5db' }}>종가  <span style={{ color: up ? UP_COLOR : DOWN_COLOR, float: 'right', fontWeight: 600 }}>{formatPrice(d.close)}</span></p>
-      <p style={{ color: '#9ca3af', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 6, paddingTop: 6 }}>
-        거래량 <span style={{ color: '#d1d5db', float: 'right' }}>{d.volume?.toLocaleString()}</span>
+      <p style={{ color: '#888', marginBottom: 6 }}>{formatTime(label, resolution)}</p>
+      <p style={{ color: '#555' }}>시가  <span style={{ color: '#111', float: 'right', marginLeft: 24 }}>{formatPrice(d.open)}</span></p>
+      <p style={{ color: '#555' }}>고가  <span style={{ color: UP_COLOR,   float: 'right' }}>{formatPrice(d.high)}</span></p>
+      <p style={{ color: '#555' }}>저가  <span style={{ color: DOWN_COLOR, float: 'right' }}>{formatPrice(d.low)}</span></p>
+      <p style={{ color: '#555' }}>종가  <span style={{ color: up ? UP_COLOR : DOWN_COLOR, float: 'right', fontWeight: 700 }}>{formatPrice(d.close)}</span></p>
+      <p style={{ color: '#888', borderTop: '1px solid #e5e5e5', marginTop: 6, paddingTop: 6 }}>
+        거래량 <span style={{ color: '#555', float: 'right' }}>{d.volume?.toLocaleString()}</span>
       </p>
     </div>
   )
 }
 
-/**
- * StockChart
- * @param {{ candles: Array, resolution: string, livePrice: number|null, prevClose: number|null }} props
- */
 export default function StockChart({ candles, resolution, livePrice, prevClose }) {
   if (!candles.length) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 340, color: '#6b7280', fontSize: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#aaa', fontSize: 13 }}>
         데이터가 없습니다
       </div>
     )
   }
 
-  // 라이브 틱이 있으면 마지막 봉 close 반영
   const data = candles.map((c, i) =>
     i === candles.length - 1 && livePrice
       ? { ...c, close: livePrice, high: Math.max(c.high, livePrice), low: Math.min(c.low, livePrice) }
       : c
   )
 
-  const prices    = data.flatMap(c => [c.high, c.low])
-  const priceMin  = Math.min(...prices) * 0.999
-  const priceMax  = Math.max(...prices) * 1.001
-  const volumeMax = Math.max(...data.map(c => c.volume))
+  const prices   = data.flatMap(c => [c.high, c.low])
+  const priceMin = Math.min(...prices) * 0.999
+  const priceMax = Math.max(...prices) * 1.001
+  const volMax   = Math.max(...data.map(c => c.volume))
 
   return (
-    <div style={{ width: '100%' }}>
-      {/* 가격 차트 */}
-      <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={data} margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
+    <div style={{ width: '100%', height: '100%' }}>
+      {/* 가격 라인 차트 */}
+      <ResponsiveContainer width="100%" height="78%">
+        <ComposedChart data={data} margin={{ top: 4, right: 60, left: 4, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
           <XAxis
             dataKey="time"
             tickFormatter={ms => formatTime(ms, resolution)}
-            tick={{ fill: '#6b7280', fontSize: 11 }}
+            tick={{ fill: '#888', fontSize: 10, fontFamily: '"JetBrains Mono", monospace' }}
             axisLine={false}
             tickLine={false}
             minTickGap={60}
@@ -96,21 +92,20 @@ export default function StockChart({ candles, resolution, livePrice, prevClose }
           <YAxis
             domain={[priceMin, priceMax]}
             tickFormatter={formatPrice}
-            tick={{ fill: '#6b7280', fontSize: 11 }}
+            tick={{ fill: '#888', fontSize: 10, fontFamily: '"JetBrains Mono", monospace' }}
             axisLine={false}
             tickLine={false}
-            width={70}
+            width={58}
             orientation="right"
           />
           <Tooltip content={<CustomTooltip resolution={resolution} />} />
 
-          {/* 전일 종가 기준선 */}
           {prevClose && (
             <ReferenceLine
               y={prevClose}
-              stroke="rgba(255,255,255,0.25)"
+              stroke="rgba(0,0,0,0.2)"
               strokeDasharray="4 4"
-              label={{ value: `전일 ${formatPrice(prevClose)}`, fill: '#6b7280', fontSize: 10, position: 'insideTopLeft' }}
+              label={{ value: `전일 ${formatPrice(prevClose)}`, fill: '#888', fontSize: 10, position: 'insideTopLeft' }}
             />
           )}
 
@@ -126,16 +121,16 @@ export default function StockChart({ candles, resolution, livePrice, prevClose }
         </ComposedChart>
       </ResponsiveContainer>
 
-      {/* 거래량 차트 */}
-      <ResponsiveContainer width="100%" height={72}>
-        <ComposedChart data={data} margin={{ top: 0, right: 8, left: 4, bottom: 0 }}>
+      {/* 거래량 바 차트 */}
+      <ResponsiveContainer width="100%" height="22%">
+        <ComposedChart data={data} margin={{ top: 0, right: 60, left: 4, bottom: 0 }}>
           <XAxis dataKey="time" hide />
-          <YAxis domain={[0, volumeMax]} hide orientation="right" />
+          <YAxis domain={[0, volMax]} hide orientation="right" />
           <Bar
             dataKey="volume"
-            fill="rgba(99,153,34,0.35)"
+            fill="rgba(22,163,74,0.3)"
             isAnimationActive={false}
-            maxBarSize={8}
+            maxBarSize={6}
           />
         </ComposedChart>
       </ResponsiveContainer>

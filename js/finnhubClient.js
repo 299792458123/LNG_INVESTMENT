@@ -5,8 +5,6 @@ if (!API_KEY) {
   console.warn('⚠️ VITE_FINNHUB_API_KEY 가 설정되지 않았습니다. .env 파일을 확인하세요.')
 }
 
-// ── REST helpers ────────────────────────────────────────────────────────────
-
 async function get(path, params = {}) {
   const url = new URL(`${BASE_URL}${path}`)
   url.searchParams.set('token', API_KEY)
@@ -17,27 +15,16 @@ async function get(path, params = {}) {
   return res.json()
 }
 
-/**
- * 현재가 + 전일 종가 조회 (REST)
- * @returns {{ c: number, d: number, dp: number, h: number, l: number, o: number, pc: number }}
- */
 export async function fetchQuote(symbol) {
   return get('/quote', { symbol })
 }
 
-/**
- * OHLCV 캔들 데이터 조회
- * @param {string} symbol   - 종목 심볼 (예: 'AAPL')
- * @param {string} resolution - '1'|'5'|'15'|'30'|'60'|'D'|'W'|'M'
- * @param {number} from     - UNIX timestamp (초)
- * @param {number} to       - UNIX timestamp (초)
- */
 export async function fetchCandles(symbol, resolution, from, to) {
   const data = await get('/stock/candle', { symbol, resolution, from, to })
   if (data.s !== 'ok') throw new Error(`캔들 조회 실패: ${data.s}`)
 
   return data.t.map((ts, i) => ({
-    time:   ts * 1000,          // ms 로 변환
+    time:   ts * 1000,
     open:   data.o[i],
     high:   data.h[i],
     low:    data.l[i],
@@ -46,23 +33,18 @@ export async function fetchCandles(symbol, resolution, from, to) {
   }))
 }
 
-/**
- * 심볼 검색 (자동완성용)
- */
 export async function searchSymbol(query) {
   const data = await get('/search', { q: query })
   return (data.result ?? []).filter(r => r.type === 'Common Stock')
 }
 
-// ── WebSocket ───────────────────────────────────────────────────────────────
-
 const WS_URL = `wss://ws.finnhub.io?token=${API_KEY}`
 
 export class FinnhubWS {
   #ws        = null
-  #listeners = new Map()   // symbol → Set<callback>
-  #queue     = []          // 연결 전 구독 대기
-  #status    = 'closed'   // 'closed' | 'connecting' | 'open'
+  #listeners = new Map()
+  #queue     = []
+  #status    = 'closed'
 
   connect() {
     if (this.#status !== 'closed') return
@@ -81,11 +63,7 @@ export class FinnhubWS {
       if (msg.type !== 'trade') return
       msg.data?.forEach(trade => {
         const cbs = this.#listeners.get(trade.s)
-        cbs?.forEach(cb => cb({
-          price:     trade.p,
-          volume:    trade.v,
-          timestamp: trade.t,
-        }))
+        cbs?.forEach(cb => cb({ price: trade.p, volume: trade.v, timestamp: trade.t }))
       })
     }
 
@@ -123,5 +101,4 @@ export class FinnhubWS {
   }
 }
 
-// 앱 전체에서 단일 WebSocket 인스턴스 공유
 export const finnhubWS = new FinnhubWS()

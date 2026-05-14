@@ -1,23 +1,48 @@
-import { Routes, Route } from 'react-router-dom'
-import Sidebar from './components/Sidebar'
-import Dashboard from './pages/Dashboard'
-import StockChartPage from './pages/StockChartPage'
-import { Portfolio, AddStock, Analytics, SettingsPage } from './pages/Placeholders'
+import { useState } from 'react'
+import LeftPanel   from './components/LeftPanel'
+import CenterPanel from './components/CenterPanel'
+import RightPanel  from './components/RightPanel'
+
+const INITIAL_STOCKS = [
+  { ticker: 'AAPL',   name: 'Apple Inc.',   qty: 5,  avg: 178,   cur: 191.24, prev: 188.93, sym: '$' },
+  { ticker: 'TSLA',   name: 'Tesla Inc.',   qty: 3,  avg: 195,   cur: 172.30, prev: 175.10, sym: '$' },
+  { ticker: 'NVDA',   name: 'Nvidia Corp.', qty: 2,  avg: 430,   cur: 895.00, prev: 877.50, sym: '$' },
+  { ticker: '005930', name: '삼성전자',      qty: 20, avg: 71000, cur: 75400,  prev: 74800,  sym: '₩' },
+]
 
 export default function App() {
+  const [stocks, setStocks]       = useState(INITIAL_STOCKS)
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [livePrice, setLivePrice] = useState(null)
+
+  const selected = stocks[activeIdx]
+
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
-        <Routes>
-          <Route path="/"          element={<Dashboard />}      />
-          <Route path="/chart"     element={<StockChartPage />} />
-          <Route path="/portfolio" element={<Portfolio />}      />
-          <Route path="/add"       element={<AddStock />}       />
-          <Route path="/analytics" element={<Analytics />}      />
-          <Route path="/settings"  element={<SettingsPage />}   />
-        </Routes>
-      </main>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '220px 1fr 200px',
+      height: '100vh',
+      background: '#fff',
+      border: '2px solid #000',
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: 12,
+      overflow: 'hidden',
+    }}>
+      <LeftPanel
+        stocks={stocks}
+        setStocks={setStocks}
+        activeIdx={activeIdx}
+        setActiveIdx={setActiveIdx}
+      />
+      <CenterPanel
+        selected={selected}
+        livePrice={livePrice}
+        setLivePrice={setLivePrice}
+      />
+      <RightPanel
+        stocks={stocks}
+        selected={selected}
+      />
     </div>
   )
 }

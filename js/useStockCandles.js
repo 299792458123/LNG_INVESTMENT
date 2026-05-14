@@ -13,13 +13,13 @@ const RESOLUTION_SECONDS = {
  * 캔들 + 현재가 조회 훅
  * @param {string|null} symbol
  * @param {'1'|'5'|'15'|'60'|'D'} resolution
- * @param {number} barCount  - 가져올 캔들 개수 (기본 100)
+ * @param {number} barCount
  */
 export function useStockCandles(symbol, resolution = '15', barCount = 100) {
-  const [candles, setCandles]   = useState([])
-  const [quote,   setQuote]     = useState(null)
-  const [loading, setLoading]   = useState(false)
-  const [error,   setError]     = useState(null)
+  const [candles, setCandles] = useState([])
+  const [quote,   setQuote]   = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
 
   const load = useCallback(async () => {
     if (!symbol) return
@@ -46,7 +46,6 @@ export function useStockCandles(symbol, resolution = '15', barCount = 100) {
 
   useEffect(() => { load() }, [load])
 
-  // 실시간 WebSocket 틱이 들어올 때 최신 캔들의 close 갱신
   const updateLastClose = useCallback((price) => {
     setCandles(prev => {
       if (!prev.length) return prev

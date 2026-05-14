@@ -1,9 +1,9 @@
 {
-  "name": "stock-manager",
+  "name": "lng-investment",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "homepage": "https://<YOUR_GITHUB_USERNAME>.github.io/stock-manager",
+  "homepage": "https://299792458123.github.io/LNG_INVESTMENT/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,11 +13,10 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.43.4",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.23.1"
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
