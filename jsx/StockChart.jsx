@@ -86,7 +86,6 @@ export default function StockChart({ candles, resolution, livePrice, prevClose }
   const priceMax = Math.max(...prices) * 1.001
   const volMax   = Math.max(...data.map(c => c.volume).filter(Boolean))
 
-  // 종가 기준 색 판단
   const first = data[0]?.close
   const last  = data[data.length - 1]?.close
   const lineColor = last >= first ? UP : DOWN

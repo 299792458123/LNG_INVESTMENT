@@ -16,9 +16,9 @@ export function useRealTimePrice(symbol) {
   }, [])
 
   useEffect(() => {
-    const prev    = symbolRef.current
+    const prev        = symbolRef.current
     symbolRef.current = symbol
-    const handler = (data) => setTick(data)
+    const handler     = (data) => setTick(data)
 
     if (prev)   finnhubWS.unsubscribe(prev, handler)
     if (symbol) {

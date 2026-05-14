@@ -50,23 +50,20 @@ export default function RightPanel({ stocks, selected }) {
       overflowY: 'auto',
     }}>
 
-      {/* ── 매수 / 매도 패널 ── */}
+      {/* ── 주문 패널 ── */}
       <div style={{ padding: '16px 14px', borderBottom: '2px solid #000' }}>
         <div style={sectionLabel}>주문</div>
 
-        {/* 종목 */}
         <div style={fieldLabel}>종목</div>
         <div style={fieldBox}>{selected?.ticker ?? '--'}</div>
 
-        {/* 수량 */}
         <div style={fieldLabel}>수량</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12, border: '1px solid #000' }}>
           <button onClick={() => setQty(q => Math.max(1, q - 1))} style={qtyBtn}>−</button>
           <span style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#000' }}>{qty}</span>
-          <button onClick={() => setQty(q => q + 1)} style={qtyBtn}>+</button>
+          <button onClick={() => setQty(q => q + 1)} style={{ ...qtyBtn, borderRight: 'none', borderLeft: '1px solid #000' }}>+</button>
         </div>
 
-        {/* 예상 금액 */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -81,7 +78,6 @@ export default function RightPanel({ stocks, selected }) {
           <span style={{ color: '#000', fontWeight: 700 }}>{sym}{orderTotal}</span>
         </div>
 
-        {/* 매수 버튼 */}
         <button
           onClick={() => execOrder('buy')}
           style={{
@@ -89,8 +85,7 @@ export default function RightPanel({ stocks, selected }) {
             background: '#000', border: '2px solid #000',
             color: '#fff', fontFamily: '"JetBrains Mono", monospace',
             fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            letterSpacing: '.06em',
-            transition: 'all .1s',
+            letterSpacing: '.06em', transition: 'all .1s',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.borderColor = '#16a34a' }}
           onMouseLeave={e => { e.currentTarget.style.background = '#000'; e.currentTarget.style.borderColor = '#000' }}
@@ -98,7 +93,6 @@ export default function RightPanel({ stocks, selected }) {
           매수 ▲
         </button>
 
-        {/* 매도 버튼 */}
         <button
           onClick={() => execOrder('sell')}
           style={{
@@ -106,8 +100,7 @@ export default function RightPanel({ stocks, selected }) {
             background: '#fff', border: '2px solid #000',
             color: '#000', fontFamily: '"JetBrains Mono", monospace',
             fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            letterSpacing: '.06em',
-            transition: 'all .1s',
+            letterSpacing: '.06em', transition: 'all .1s',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#fff' }}
           onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.color = '#000' }}
@@ -116,14 +109,13 @@ export default function RightPanel({ stocks, selected }) {
         </button>
       </div>
 
-      {/* ── 매입 투표 ── */}
+      {/* ── 커뮤니티 투표 ── */}
       <div style={{ padding: '16px 14px', flex: 1 }}>
         <div style={sectionLabel}>커뮤니티 투표</div>
         <div style={{ fontSize: 10, color: '#bbb', marginBottom: 14, marginTop: -6 }}>
           {selected?.ticker} · 총 {votes.buy + votes.hold + votes.sell}표
         </div>
 
-        {/* 바 + 퍼센트 */}
         {VOTE_OPTIONS.map(({ key, label, color }) => (
           <div key={key} style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555', marginBottom: 4 }}>
@@ -141,15 +133,11 @@ export default function RightPanel({ stocks, selected }) {
           </div>
         ))}
 
-        {/* 투표 버튼 */}
         <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {myVote ? (
             <div style={{
-              textAlign: 'center',
-              fontSize: 10,
-              color: '#888',
-              padding: '10px 0',
-              border: '1px dashed #ccc',
+              textAlign: 'center', fontSize: 10, color: '#888',
+              padding: '10px 0', border: '1px dashed #ccc',
             }}>
               투표 완료 ✓
             </div>
@@ -159,15 +147,11 @@ export default function RightPanel({ stocks, selected }) {
                 key={key}
                 onClick={() => castVote(key)}
                 style={{
-                  padding: '8px 0',
-                  background: '#fff',
+                  padding: '8px 0', background: '#fff',
                   border: '1px solid #e0e0e0',
                   fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: 10,
-                  color: '#555',
-                  cursor: 'pointer',
-                  transition: 'all .1s',
-                  letterSpacing: '.04em',
+                  fontSize: 10, color: '#555', cursor: 'pointer',
+                  transition: 'all .1s', letterSpacing: '.04em',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color; e.currentTarget.style.background = `${color}10` }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555'; e.currentTarget.style.background = '#fff' }}
@@ -183,40 +167,21 @@ export default function RightPanel({ stocks, selected }) {
 }
 
 const sectionLabel = {
-  fontSize: 9,
-  letterSpacing: '.12em',
-  textTransform: 'uppercase',
-  color: '#888',
-  marginBottom: 12,
+  fontSize: 9, letterSpacing: '.12em',
+  textTransform: 'uppercase', color: '#888', marginBottom: 12,
 }
-
 const fieldLabel = {
-  fontSize: 9,
-  color: '#aaa',
-  marginBottom: 4,
-  letterSpacing: '.06em',
-  textTransform: 'uppercase',
+  fontSize: 9, color: '#aaa', marginBottom: 4,
+  letterSpacing: '.06em', textTransform: 'uppercase',
 }
-
 const fieldBox = {
-  padding: '7px 10px',
-  background: '#f5f5f5',
-  border: '1px solid #e0e0e0',
-  fontSize: 12,
-  fontWeight: 700,
-  color: '#000',
-  marginBottom: 10,
+  padding: '7px 10px', background: '#f5f5f5',
+  border: '1px solid #e0e0e0', fontSize: 12,
+  fontWeight: 700, color: '#000', marginBottom: 10,
 }
-
 const qtyBtn = {
-  width: 36,
-  height: 34,
-  background: '#fff',
-  border: 'none',
-  color: '#000',
-  fontSize: 16,
-  cursor: 'pointer',
-  fontFamily: '"JetBrains Mono", monospace',
-  flexShrink: 0,
-  borderRight: '1px solid #000',
+  width: 36, height: 34, background: '#fff',
+  border: 'none', color: '#000', fontSize: 16,
+  cursor: 'pointer', fontFamily: '"JetBrains Mono", monospace',
+  flexShrink: 0, borderRight: '1px solid #000',
 }

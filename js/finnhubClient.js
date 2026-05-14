@@ -2,10 +2,12 @@ const BASE_URL = 'https://finnhub.io/api/v1'
 const API_KEY  = import.meta.env.VITE_FINNHUB_API_KEY
 
 if (!API_KEY) {
-  console.warn('⚠️ VITE_FINNHUB_API_KEY 가 설정되지 않았습니다.')
+  // ✅ warn만 하고 throw하지 않음 → 빌드 실패 방지
+  console.warn('⚠️ VITE_FINNHUB_API_KEY 가 설정되지 않았습니다. 차트 데이터가 표시되지 않습니다.')
 }
 
 async function get(path, params = {}) {
+  if (!API_KEY) throw new Error('Finnhub API 키가 없습니다.')
   const url = new URL(`${BASE_URL}${path}`)
   url.searchParams.set('token', API_KEY)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
@@ -38,7 +40,7 @@ export async function searchSymbol(query) {
 
 // ── WebSocket ──────────────────────────────────────────────
 
-const WS_URL = `wss://ws.finnhub.io?token=${API_KEY}`
+const WS_URL = API_KEY ? `wss://ws.finnhub.io?token=${API_KEY}` : null
 
 export class FinnhubWS {
   #ws        = null
@@ -47,6 +49,10 @@ export class FinnhubWS {
   #status    = 'closed'
 
   connect() {
+    if (!WS_URL) {
+      console.warn('⚠️ WebSocket 연결 불가: API_KEY 없음')
+      return
+    }
     if (this.#status !== 'closed') return
     this.#status = 'connecting'
     this.#ws = new WebSocket(WS_URL)
