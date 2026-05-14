@@ -4,12 +4,14 @@ import {
   ListOrdered,
   PlusCircle,
   BarChart2,
+  LineChart,
   Settings,
   TrendingUp,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/',          icon: LayoutDashboard, label: '대시보드' },
+  { to: '/chart',     icon: LineChart,       label: '실시간 차트' },
   { to: '/portfolio', icon: ListOrdered,     label: '포트폴리오' },
   { to: '/add',       icon: PlusCircle,      label: '종목 추가' },
   { to: '/analytics', icon: BarChart2,       label: '분석' },
