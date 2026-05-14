@@ -5,173 +5,218 @@ export default function RightPanel({ stocks, selected }) {
   const [myVote, setMyVote] = useState(null)
   const [votes,  setVotes]  = useState({ buy: 62, hold: 24, sell: 14 })
 
-  // 종목 변경 시 투표 랜덤 리셋
   useEffect(() => {
     const b = 40 + Math.floor(Math.random() * 35)
     const h = 10 + Math.floor(Math.random() * 20)
     setVotes({ buy: b, hold: h, sell: 100 - b - h })
     setMyVote(null)
+    setQty(1)
   }, [selected?.ticker])
 
-  const price   = selected?.cur ?? 0
-  const sym     = selected?.sym ?? '$'
-  const orderTotal = (price * qty).toLocaleString(undefined, { maximumFractionDigits: sym === '₩' ? 0 : 2 })
+  const price      = selected?.cur ?? 0
+  const sym        = selected?.sym ?? '$'
+  const orderTotal = (price * qty).toLocaleString(undefined, {
+    maximumFractionDigits: sym === '₩' ? 0 : 2,
+  })
 
   function castVote(type) {
+    if (myVote) return
     setMyVote(type)
     setVotes(v => {
-      const next = { ...v }
-      if (type === 'buy')  { next.buy  = Math.min(next.buy  + 3, 80); next.hold = Math.max(next.hold - 1, 5); next.sell = 100 - next.buy - next.hold }
-      if (type === 'hold') { next.hold = Math.min(next.hold + 3, 50); next.sell = Math.max(next.sell - 1, 5); next.buy  = 100 - next.hold - next.sell }
-      if (type === 'sell') { next.sell = Math.min(next.sell + 3, 50); next.buy  = Math.max(next.buy  - 1, 20); next.hold = 100 - next.buy - next.sell }
-      return next
+      const n = { ...v }
+      if (type === 'buy')  { n.buy  = Math.min(n.buy  + 4, 85); n.sell = Math.max(n.sell - 2, 5); n.hold = 100 - n.buy - n.sell }
+      if (type === 'hold') { n.hold = Math.min(n.hold + 4, 55); n.sell = Math.max(n.sell - 2, 5); n.buy  = 100 - n.hold - n.sell }
+      if (type === 'sell') { n.sell = Math.min(n.sell + 4, 55); n.buy  = Math.max(n.buy  - 2, 20); n.hold = 100 - n.buy - n.sell }
+      return n
     })
   }
 
   function execOrder(type) {
-    alert(`${selected?.ticker} ${qty}주 ${type === 'buy' ? '매수' : '매도'} 주문이 접수되었습니다.`)
+    alert(`${selected?.ticker} ${qty}주 ${type === 'buy' ? '매수' : '매도'} 주문 접수`)
   }
 
-  const VoteBar = ({ label, value, fillColor, pctId }) => (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555', fontSize: 10, marginBottom: 3 }}>
-        <span>{label}</span><span>{value}%</span>
-      </div>
-      <div style={{ background: '#e5e5e5', borderRadius: 3, height: 6, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${value}%`, background: fillColor, borderRadius: 3, transition: 'width .4s' }} />
-      </div>
-    </div>
-  )
+  const VOTE_OPTIONS = [
+    { key: 'buy',  label: '매수', color: '#16a34a' },
+    { key: 'hold', label: '보유', color: '#b45309' },
+    { key: 'sell', label: '매도', color: '#dc2626' },
+  ]
 
   return (
     <div style={{
-      background: '#fff',
       borderLeft: '2px solid #000',
       display: 'flex',
       flexDirection: 'column',
+      background: '#fff',
       overflowY: 'auto',
     }}>
 
-      {/* 매수 / 매도 */}
-      <div style={{ padding: 14, borderBottom: '2px solid #000' }}>
-        <div style={sectionTitle}>매수 / 매도</div>
+      {/* ── 매수 / 매도 패널 ── */}
+      <div style={{ padding: '16px 14px', borderBottom: '2px solid #000' }}>
+        <div style={sectionLabel}>주문</div>
 
+        {/* 종목 */}
         <div style={fieldLabel}>종목</div>
-        <div style={{ marginBottom: 8, padding: '7px 10px', background: '#f5f5f5', border: '1px solid #ccc', borderRadius: 6, color: '#111', fontSize: 12, fontWeight: 700 }}>
-          {selected?.ticker ?? '--'}
-        </div>
+        <div style={fieldBox}>{selected?.ticker ?? '--'}</div>
 
+        {/* 수량 */}
         <div style={fieldLabel}>수량</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <QtyBtn onClick={() => setQty(q => Math.max(1, q - 1))}>−</QtyBtn>
-          <span style={{ flex: 1, textAlign: 'center', color: '#000', fontSize: 14, fontWeight: 700 }}>{qty}</span>
-          <QtyBtn onClick={() => setQty(q => q + 1)}>+</QtyBtn>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 12, border: '1px solid #000' }}>
+          <button onClick={() => setQty(q => Math.max(1, q - 1))} style={qtyBtn}>−</button>
+          <span style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#000' }}>{qty}</span>
+          <button onClick={() => setQty(q => q + 1)} style={qtyBtn}>+</button>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', padding: '8px 0', borderTop: '1px solid #e5e5e5', borderBottom: '1px solid #e5e5e5', marginBottom: 10 }}>
+        {/* 예상 금액 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: 10,
+          color: '#888',
+          padding: '8px 0',
+          borderTop: '1px solid #e0e0e0',
+          borderBottom: '1px solid #e0e0e0',
+          marginBottom: 12,
+        }}>
           <span>예상 금액</span>
           <span style={{ color: '#000', fontWeight: 700 }}>{sym}{orderTotal}</span>
         </div>
 
+        {/* 매수 버튼 */}
         <button
           onClick={() => execOrder('buy')}
-          style={{ ...execBtn, background: '#16a34a', border: '2px solid #16a34a', color: '#fff', marginBottom: 6 }}
+          style={{
+            width: '100%', padding: '10px 0', marginBottom: 6,
+            background: '#000', border: '2px solid #000',
+            color: '#fff', fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            letterSpacing: '.06em',
+            transition: 'all .1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.borderColor = '#16a34a' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#000'; e.currentTarget.style.borderColor = '#000' }}
         >
           매수 ▲
         </button>
+
+        {/* 매도 버튼 */}
         <button
           onClick={() => execOrder('sell')}
-          style={{ ...execBtn, background: '#fff', border: '2px solid #dc2626', color: '#dc2626' }}
+          style={{
+            width: '100%', padding: '10px 0',
+            background: '#fff', border: '2px solid #000',
+            color: '#000', fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            letterSpacing: '.06em',
+            transition: 'all .1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.color = '#fff' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.color = '#000' }}
         >
           매도 ▼
         </button>
       </div>
 
-      {/* 매입 투표 */}
-      <div style={{ padding: 14, flex: 1 }}>
-        <div style={sectionTitle}>매입 투표 — {selected?.ticker}</div>
-
-        <VoteBar label="매수" value={votes.buy}  fillColor="#16a34a" />
-        <VoteBar label="보유" value={votes.hold} fillColor="#ca8a04" />
-        <VoteBar label="매도" value={votes.sell} fillColor="#dc2626" />
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '8px 0', fontSize: 10, color: '#555' }}>
-          <span>신뢰도</span>
-          <span style={{ padding: '2px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#dcfce7', color: '#15803d' }}>높음 ●</span>
+      {/* ── 매입 투표 ── */}
+      <div style={{ padding: '16px 14px', flex: 1 }}>
+        <div style={sectionLabel}>커뮤니티 투표</div>
+        <div style={{ fontSize: 10, color: '#bbb', marginBottom: 14, marginTop: -6 }}>
+          {selected?.ticker} · 총 {votes.buy + votes.hold + votes.sell}표
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 10 }}>
-          {[['buy', '매수 투표'], ['hold', '보유 투표'], ['sell', '매도 투표']].map(([type, label]) => (
-            <button
-              key={type}
-              onClick={() => castVote(type)}
-              style={{
-                background: myVote === type ? '#f0fdf4' : '#fff',
-                border: `1px solid ${myVote === type ? '#16a34a' : '#aaa'}`,
-                borderRadius: 5,
-                padding: 6,
-                color: myVote === type ? '#16a34a' : '#555',
-                fontSize: 10,
-                fontWeight: myVote === type ? 700 : 400,
-                fontFamily: '"JetBrains Mono", monospace',
-                cursor: 'pointer',
-                transition: 'all .12s',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        {/* 바 + 퍼센트 */}
+        {VOTE_OPTIONS.map(({ key, label, color }) => (
+          <div key={key} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555', marginBottom: 4 }}>
+              <span style={{ fontWeight: myVote === key ? 700 : 400 }}>{label}</span>
+              <span style={{ color: myVote === key ? color : '#888' }}>{votes[key]}%</span>
+            </div>
+            <div style={{ background: '#f0f0f0', height: 6, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${votes[key]}%`,
+                background: color,
+                transition: 'width .4s ease',
+              }} />
+            </div>
+          </div>
+        ))}
+
+        {/* 투표 버튼 */}
+        <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {myVote ? (
+            <div style={{
+              textAlign: 'center',
+              fontSize: 10,
+              color: '#888',
+              padding: '10px 0',
+              border: '1px dashed #ccc',
+            }}>
+              투표 완료 ✓
+            </div>
+          ) : (
+            VOTE_OPTIONS.map(({ key, label, color }) => (
+              <button
+                key={key}
+                onClick={() => castVote(key)}
+                style={{
+                  padding: '8px 0',
+                  background: '#fff',
+                  border: '1px solid #e0e0e0',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: 10,
+                  color: '#555',
+                  cursor: 'pointer',
+                  transition: 'all .1s',
+                  letterSpacing: '.04em',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color; e.currentTarget.style.background = `${color}10` }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555'; e.currentTarget.style.background = '#fff' }}
+              >
+                {label} 투표
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function QtyBtn({ children, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: 28, height: 28,
-        background: '#fff',
-        border: '1px solid #aaa',
-        borderRadius: 5,
-        color: '#333',
-        fontSize: 16,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        fontFamily: '"JetBrains Mono", monospace',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-const sectionTitle = {
-  color: '#555',
-  fontSize: 10,
-  letterSpacing: '.08em',
+const sectionLabel = {
+  fontSize: 9,
+  letterSpacing: '.12em',
   textTransform: 'uppercase',
-  marginBottom: 10,
+  color: '#888',
+  marginBottom: 12,
 }
 
 const fieldLabel = {
-  color: '#555',
-  fontSize: 10,
+  fontSize: 9,
+  color: '#aaa',
   marginBottom: 4,
+  letterSpacing: '.06em',
+  textTransform: 'uppercase',
 }
 
-const execBtn = {
-  width: '100%',
-  padding: 10,
-  borderRadius: 7,
-  fontFamily: '"JetBrains Mono", monospace',
+const fieldBox = {
+  padding: '7px 10px',
+  background: '#f5f5f5',
+  border: '1px solid #e0e0e0',
   fontSize: 12,
   fontWeight: 700,
+  color: '#000',
+  marginBottom: 10,
+}
+
+const qtyBtn = {
+  width: 36,
+  height: 34,
+  background: '#fff',
+  border: 'none',
+  color: '#000',
+  fontSize: 16,
   cursor: 'pointer',
-  transition: 'all .15s',
+  fontFamily: '"JetBrains Mono", monospace',
+  flexShrink: 0,
+  borderRight: '1px solid #000',
 }

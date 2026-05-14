@@ -2,14 +2,13 @@ const BASE_URL = 'https://finnhub.io/api/v1'
 const API_KEY  = import.meta.env.VITE_FINNHUB_API_KEY
 
 if (!API_KEY) {
-  console.warn('⚠️ VITE_FINNHUB_API_KEY 가 설정되지 않았습니다. .env 파일을 확인하세요.')
+  console.warn('⚠️ VITE_FINNHUB_API_KEY 가 설정되지 않았습니다.')
 }
 
 async function get(path, params = {}) {
   const url = new URL(`${BASE_URL}${path}`)
   url.searchParams.set('token', API_KEY)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
-
   const res = await fetch(url.toString())
   if (!res.ok) throw new Error(`Finnhub ${res.status}: ${res.statusText}`)
   return res.json()
@@ -22,7 +21,6 @@ export async function fetchQuote(symbol) {
 export async function fetchCandles(symbol, resolution, from, to) {
   const data = await get('/stock/candle', { symbol, resolution, from, to })
   if (data.s !== 'ok') throw new Error(`캔들 조회 실패: ${data.s}`)
-
   return data.t.map((ts, i) => ({
     time:   ts * 1000,
     open:   data.o[i],
@@ -38,6 +36,8 @@ export async function searchSymbol(query) {
   return (data.result ?? []).filter(r => r.type === 'Common Stock')
 }
 
+// ── WebSocket ──────────────────────────────────────────────
+
 const WS_URL = `wss://ws.finnhub.io?token=${API_KEY}`
 
 export class FinnhubWS {
@@ -49,7 +49,6 @@ export class FinnhubWS {
   connect() {
     if (this.#status !== 'closed') return
     this.#status = 'connecting'
-
     this.#ws = new WebSocket(WS_URL)
 
     this.#ws.onopen = () => {
@@ -57,16 +56,15 @@ export class FinnhubWS {
       this.#queue.forEach(sym => this.#send('subscribe', sym))
       this.#queue = []
     }
-
     this.#ws.onmessage = (evt) => {
       const msg = JSON.parse(evt.data)
       if (msg.type !== 'trade') return
       msg.data?.forEach(trade => {
-        const cbs = this.#listeners.get(trade.s)
-        cbs?.forEach(cb => cb({ price: trade.p, volume: trade.v, timestamp: trade.t }))
+        this.#listeners.get(trade.s)?.forEach(cb =>
+          cb({ price: trade.p, volume: trade.v, timestamp: trade.t })
+        )
       })
     }
-
     this.#ws.onerror = (e) => console.error('Finnhub WS error', e)
     this.#ws.onclose = () => { this.#status = 'closed' }
   }

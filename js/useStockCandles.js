@@ -15,7 +15,7 @@ const RESOLUTION_SECONDS = {
  * @param {'1'|'5'|'15'|'60'|'D'} resolution
  * @param {number} barCount
  */
-export function useStockCandles(symbol, resolution = '15', barCount = 100) {
+export function useStockCandles(symbol, resolution = '15', barCount = 120) {
   const [candles, setCandles] = useState([])
   const [quote,   setQuote]   = useState(null)
   const [loading, setLoading] = useState(false)
@@ -25,16 +25,13 @@ export function useStockCandles(symbol, resolution = '15', barCount = 100) {
     if (!symbol) return
     setLoading(true)
     setError(null)
-
     try {
       const to   = Math.floor(Date.now() / 1000)
       const from = to - RESOLUTION_SECONDS[resolution] * barCount
-
       const [candleData, quoteData] = await Promise.all([
         fetchCandles(symbol, resolution, from, to),
         fetchQuote(symbol),
       ])
-
       setCandles(candleData)
       setQuote(quoteData)
     } catch (err) {

@@ -4,7 +4,6 @@ import { finnhubWS } from '../lib/finnhubClient'
 /**
  * 실시간 가격 구독 훅
  * @param {string|null} symbol
- * @returns {{ price: number|null, volume: number|null, timestamp: number|null, connected: boolean }}
  */
 export function useRealTimePrice(symbol) {
   const [tick, setTick]           = useState({ price: null, volume: null, timestamp: null })
@@ -14,13 +13,11 @@ export function useRealTimePrice(symbol) {
   useEffect(() => {
     finnhubWS.connect()
     setConnected(true)
-    return () => {}
   }, [])
 
   useEffect(() => {
-    const prev = symbolRef.current
+    const prev    = symbolRef.current
     symbolRef.current = symbol
-
     const handler = (data) => setTick(data)
 
     if (prev)   finnhubWS.unsubscribe(prev, handler)
@@ -28,10 +25,7 @@ export function useRealTimePrice(symbol) {
       finnhubWS.subscribe(symbol, handler)
       setTick({ price: null, volume: null, timestamp: null })
     }
-
-    return () => {
-      if (symbol) finnhubWS.unsubscribe(symbol, handler)
-    }
+    return () => { if (symbol) finnhubWS.unsubscribe(symbol, handler) }
   }, [symbol])
 
   return { ...tick, connected }
