@@ -112,10 +112,10 @@
 const API_KEY = 'YOUR_API_KEY_HERE';
 const BASE_URL = 'https://finnhub.io/api/v1';
 const KEYS = {
-  holdings: 'stocks_dashboard_holdings_v2',
-  prices: 'stocks_dashboard_prices_v2',
-  selected: 'stocks_dashboard_selected_v2',
-  votes: 'stocks_dashboard_votes_v2'
+  holdings: 'stocks_dashboard_holdings_v3',
+  prices: 'stocks_dashboard_prices_v3',
+  selected: 'stocks_dashboard_selected_v3',
+  votes: 'stocks_dashboard_votes_v3'
 };
 
 const state = {
@@ -313,13 +313,15 @@ document.getElementById('addForm').addEventListener('submit', async (e) => {
   const buyPrice = Number(document.getElementById('buyPrice').value);
   const quantity = Number(document.getElementById('quantity').value);
 
-  if (!ticker || buyPrice <= 0 || quantity <= 0) {
-    el.formError.textContent = '유효한 값을 입력해 주세요.';
+  if (!ticker || !/^[A-Z.]{1,10}$/.test(ticker) || buyPrice <= 0 || quantity <= 0) {
+    el.formError.textContent = '티커 형식/구매가/수량을 확인해 주세요.';
     el.formError.classList.remove('hidden');
     return;
   }
 
-  state.holdings.push({ ticker, buyPrice, quantity });
+  const existing = state.holdings.find((h) => h.ticker === ticker && Number(h.buyPrice) === buyPrice);
+  if (existing) existing.quantity += quantity;
+  else state.holdings.push({ ticker, buyPrice, quantity });
   if (!state.votes[ticker]) state.votes[ticker] = { buy: 0, hold: 0, sell: 0 };
   state.selected = ticker;
   save();
