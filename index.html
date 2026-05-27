@@ -7,55 +7,54 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root { color-scheme: dark; }
-    body { min-height: 100vh; background: radial-gradient(1200px 700px at 0% -10%, #1e293b 0%, #0f172a 40%, #020617 100%); }
-    .glass { background: rgba(15, 23, 42, .78); border: 1px solid rgba(148,163,184,.2); backdrop-filter: blur(10px); }
-    .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-    .scroll::-webkit-scrollbar-thumb { background: rgba(100,116,139,.6); border-radius: 999px; }
+    body { min-height: 100vh; background: #f8fafc; color: #0f172a; }
+    .card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
+    .scroll::-webkit-scrollbar { width: 8px; }
+    .scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
   </style>
 </head>
-<body class="text-slate-100">
+<body>
   <div class="p-4 md:p-6">
     <header class="mb-5 flex items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold tracking-tight">개인 주식 포트폴리오 대시보드</h1>
-        <p class="text-slate-400 text-sm mt-1">No-Install · 단일 index.html · localStorage 저장</p>
+        <p class="text-slate-500 text-sm mt-1">No-Install · 단일 index.html · localStorage 저장</p>
       </div>
-      <div class="text-right text-xs text-slate-300">
+      <div class="text-right text-xs text-slate-500">
         <div id="lastUpdated">업데이트 대기 중</div>
-        <div id="apiHint" class="text-amber-300 mt-1 hidden">API 키를 입력하세요</div>
+        <div id="apiHint" class="text-rose-500 mt-1 hidden">API 키를 입력하세요</div>
       </div>
     </header>
 
     <main class="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 min-h-[78vh]">
-      <section class="glass rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
+      <section class="card rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
         <div>
-          <p class="text-slate-400 text-sm">총 자산 (Total Value)</p>
+          <p class="text-slate-500 text-sm">총 자산 (Total Value)</p>
           <p id="totalValue" class="text-2xl font-bold mt-1">$0.00</p>
-          <p id="totalPnl" class="text-sm text-slate-300 mt-1">총 수익금: $0.00 (0.00%)</p>
+          <p id="totalPnl" class="text-sm text-slate-700 mt-1">총 수익금: $0.00 (0.00%)</p>
         </div>
 
         <div class="flex-1 min-h-0">
           <div class="flex justify-between items-center mb-2">
             <h2 class="font-semibold">보유 주식</h2>
-            <span id="count" class="text-xs text-slate-400">0개</span>
+            <span id="count" class="text-xs text-slate-500">0개</span>
           </div>
           <ul id="portfolioList" class="space-y-2 max-h-[45vh] overflow-auto pr-1 scroll"></ul>
-          <p id="emptyPortfolio" class="text-slate-400 text-sm mt-2">추가된 종목이 없습니다.</p>
+          <p id="emptyPortfolio" class="text-slate-500 text-sm mt-2">추가된 종목이 없습니다.</p>
         </div>
 
-        <button id="openModal" class="w-full rounded-lg py-2.5 bg-indigo-500 hover:bg-indigo-400 font-semibold">+ 종목 추가</button>
+        <button id="openModal" class="w-full rounded-lg py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">+ 종목 추가</button>
       </section>
 
-      <section class="glass rounded-2xl p-4 xl:col-span-6 flex flex-col">
+      <section class="card rounded-2xl p-4 xl:col-span-6 flex flex-col">
         <div class="flex items-center justify-between mb-4 gap-2">
           <div>
             <h2 id="chartTitle" class="text-xl font-semibold">종목을 선택하세요</h2>
-            <p id="priceNow" class="text-slate-400 text-sm">현재가: -</p>
+            <p id="priceNow" class="text-slate-500 text-sm">현재가: -</p>
           </div>
           <div class="flex items-center gap-2">
-            <span id="loading" class="hidden text-xs text-yellow-300">로딩 중...</span>
-            <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm">새로고침</button>
+            <span id="loading" class="hidden text-xs text-amber-600">로딩 중...</span>
+            <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm text-white">새로고침</button>
           </div>
         </div>
         <div class="relative flex-1 min-h-[320px]">
@@ -63,46 +62,46 @@
         </div>
       </section>
 
-      <section class="glass rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
+      <section class="card rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
         <div class="flex-1 min-h-0">
           <h2 class="font-semibold mb-2">수익 기록</h2>
-          <ul id="recordList" class="space-y-2 max-h-[38vh] overflow-auto pr-1 scroll"></ul>
-          <p id="emptyRecords" class="text-slate-400 text-sm">기록이 없습니다.</p>
+          <ul id="recordList" class="space-y-2 max-h-[30vh] overflow-auto pr-1 scroll"></ul>
+          <p id="emptyRecords" class="text-slate-500 text-sm">기록이 없습니다.</p>
         </div>
-        <div class="border-t border-slate-700 pt-4">
-          <h2 class="font-semibold">투표 (현재 종목)</h2>
-          <p id="voteTarget" class="text-slate-400 text-sm mt-1 mb-3">종목을 선택해 주세요.</p>
-          <div class="grid grid-cols-3 gap-2 mb-2">
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500" data-vote="buy">구매</button>
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-500" data-vote="hold">유지</button>
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-rose-600 hover:bg-rose-500" data-vote="sell">판매</button>
-          </div>
-          <p id="voteResult" class="text-xs text-slate-300">BUY: 0 · HOLD: 0 · SELL: 0</p>
+        <div class="border-t border-slate-200 pt-4">
+          <h2 class="font-semibold">투표 결과 (7명)</h2>
+          <p id="voteTarget" class="text-slate-500 text-sm mt-1 mb-3">종목을 선택해 주세요.</p>
+          <div id="voterGrid" class="space-y-2 mb-3"></div>
+          <p id="voteSummary" class="text-xs text-slate-600">BUY: 0 · HOLD: 0 · SELL: 0</p>
         </div>
       </section>
     </main>
   </div>
 
-  <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50 p-4">
-    <div class="glass w-full max-w-md rounded-2xl p-5">
+  <div id="modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm items-center justify-center z-50 p-4">
+    <div class="card w-full max-w-xl rounded-2xl p-5">
       <h3 class="text-lg font-semibold mb-4">종목 추가</h3>
       <form id="addForm" class="space-y-3">
         <div>
-          <label class="text-sm text-slate-300">티커 (예: AAPL)</label>
-          <input id="ticker" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 uppercase" required maxlength="10" />
+          <label class="text-sm text-slate-700">종목 검색</label>
+          <input id="searchInput" class="mt-1 w-full rounded-lg bg-white border border-slate-300 px-3 py-2" placeholder="예: Apple 또는 AAPL" autocomplete="off" required />
+          <ul id="searchResults" class="mt-2 max-h-44 overflow-auto border border-slate-200 rounded-lg hidden"></ul>
+          <p id="selectedSymbol" class="text-xs text-indigo-700 mt-1">선택된 종목: 없음</p>
         </div>
-        <div>
-          <label class="text-sm text-slate-300">구매가</label>
-          <input id="buyPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2" required />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm text-slate-700">구매가</label>
+            <input id="buyPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-lg bg-white border border-slate-300 px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-700">수량</label>
+            <input id="quantity" type="number" min="0.0001" step="0.0001" class="mt-1 w-full rounded-lg bg-white border border-slate-300 px-3 py-2" required />
+          </div>
         </div>
-        <div>
-          <label class="text-sm text-slate-300">수량</label>
-          <input id="quantity" type="number" min="0.0001" step="0.0001" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2" required />
-        </div>
-        <p id="formError" class="hidden text-rose-300 text-sm"></p>
+        <p id="formError" class="hidden text-rose-500 text-sm"></p>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" id="closeModal" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600">취소</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 font-semibold">저장</button>
+          <button type="button" id="closeModal" class="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300">취소</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold">저장</button>
         </div>
       </form>
     </div>
@@ -111,11 +110,12 @@
 <script>
 const API_KEY = 'YOUR_API_KEY_HERE';
 const BASE_URL = 'https://finnhub.io/api/v1';
+const VOTERS = ['1번','2번','3번','4번','5번','6번','7번'];
 const KEYS = {
-  holdings: 'stocks_dashboard_holdings_v3',
-  prices: 'stocks_dashboard_prices_v3',
-  selected: 'stocks_dashboard_selected_v3',
-  votes: 'stocks_dashboard_votes_v3'
+  holdings: 'stocks_dashboard_holdings_v4',
+  prices: 'stocks_dashboard_prices_v4',
+  selected: 'stocks_dashboard_selected_v4',
+  votes: 'stocks_dashboard_votes_v4'
 };
 
 const state = {
@@ -123,244 +123,188 @@ const state = {
   prices: JSON.parse(localStorage.getItem(KEYS.prices) || '{}'),
   selected: localStorage.getItem(KEYS.selected) || null,
   votes: JSON.parse(localStorage.getItem(KEYS.votes) || '{}'),
-  chart: null
+  chart: null,
+  searchPick: null,
+  searchResults: []
 };
 
 const el = {
-  totalValue: document.getElementById('totalValue'),
-  totalPnl: document.getElementById('totalPnl'),
-  count: document.getElementById('count'),
-  portfolioList: document.getElementById('portfolioList'),
-  recordList: document.getElementById('recordList'),
-  emptyPortfolio: document.getElementById('emptyPortfolio'),
-  emptyRecords: document.getElementById('emptyRecords'),
-  chartTitle: document.getElementById('chartTitle'),
-  priceNow: document.getElementById('priceNow'),
-  loading: document.getElementById('loading'),
-  lastUpdated: document.getElementById('lastUpdated'),
-  voteTarget: document.getElementById('voteTarget'),
-  voteResult: document.getElementById('voteResult'),
-  formError: document.getElementById('formError'),
-  apiHint: document.getElementById('apiHint')
+  totalValue: document.getElementById('totalValue'), totalPnl: document.getElementById('totalPnl'), count: document.getElementById('count'),
+  portfolioList: document.getElementById('portfolioList'), recordList: document.getElementById('recordList'),
+  emptyPortfolio: document.getElementById('emptyPortfolio'), emptyRecords: document.getElementById('emptyRecords'),
+  chartTitle: document.getElementById('chartTitle'), priceNow: document.getElementById('priceNow'), loading: document.getElementById('loading'),
+  lastUpdated: document.getElementById('lastUpdated'), voteTarget: document.getElementById('voteTarget'), voteSummary: document.getElementById('voteSummary'),
+  formError: document.getElementById('formError'), apiHint: document.getElementById('apiHint'), searchInput: document.getElementById('searchInput'),
+  searchResults: document.getElementById('searchResults'), selectedSymbol: document.getElementById('selectedSymbol'), voterGrid: document.getElementById('voterGrid')
 };
 
-const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n || 0));
-const formatPct = (n) => `${(Number(n || 0)).toFixed(2)}%`;
-const cls = (n) => n > 0 ? 'text-emerald-400' : n < 0 ? 'text-rose-400' : 'text-slate-300';
+const formatMoney = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+const formatPct = (n) => `${(Number(n||0)).toFixed(2)}%`;
+const cls = (n) => n > 0 ? 'text-emerald-600' : n < 0 ? 'text-rose-600' : 'text-slate-600';
 
-function save() {
+function save(){
   localStorage.setItem(KEYS.holdings, JSON.stringify(state.holdings));
   localStorage.setItem(KEYS.prices, JSON.stringify(state.prices));
   localStorage.setItem(KEYS.votes, JSON.stringify(state.votes));
-  if (state.selected) localStorage.setItem(KEYS.selected, state.selected);
+  if(state.selected) localStorage.setItem(KEYS.selected, state.selected);
 }
+function setLoading(flag){ el.loading.classList.toggle('hidden', !flag); document.getElementById('refreshBtn').disabled = flag; }
 
-function setLoading(flag) {
-  el.loading.classList.toggle('hidden', !flag);
-  document.getElementById('refreshBtn').disabled = flag;
-}
-
-async function fetchQuote(symbol) {
-  const res = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
-  if (!res.ok) throw new Error('현재가 조회 실패');
+async function searchSymbols(q){
+  const res = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(q)}&token=${API_KEY}`);
+  if(!res.ok) throw new Error('검색 실패');
   const data = await res.json();
-  if (typeof data.c !== 'number') throw new Error('유효하지 않은 가격 데이터');
+  return (data.result || []).filter(r => r.symbol && r.description).slice(0, 10);
+}
+async function fetchQuote(symbol){
+  const res = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
+  if(!res.ok) throw new Error('현재가 조회 실패');
+  const data = await res.json();
+  if(typeof data.c !== 'number') throw new Error('유효하지 않은 가격 데이터');
   return data.c;
 }
-
-async function fetchCandles(symbol) {
-  const to = Math.floor(Date.now() / 1000);
-  const from = to - 60 * 60 * 24 * 45;
+async function fetchCandles(symbol){
+  const to = Math.floor(Date.now()/1000), from = to - 60*60*24*45;
   const res = await fetch(`${BASE_URL}/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
-  if (!res.ok) throw new Error('차트 데이터 조회 실패');
+  if(!res.ok) throw new Error('차트 데이터 조회 실패');
   const data = await res.json();
-  if (data.s !== 'ok') throw new Error('차트 데이터 없음');
+  if(data.s !== 'ok') throw new Error('차트 데이터 없음');
   return data;
 }
 
-function drawChart(labels = [], prices = []) {
+function drawChart(labels=[], prices=[]){
   const ctx = document.getElementById('stockChart').getContext('2d');
-  if (state.chart) state.chart.destroy();
-  state.chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets: [{ data: prices, borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,.2)', fill: true, tension: .25, pointRadius: 0 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71,85,105,.2)' } },
-        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71,85,105,.2)' } }
-      }
-    }
-  });
+  if(state.chart) state.chart.destroy();
+  state.chart = new Chart(ctx, {type:'line', data:{labels,datasets:[{data:prices,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.15)',fill:true,tension:.25,pointRadius:0}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
 }
 
-function renderVotes() {
-  if (!state.selected) {
-    el.voteTarget.textContent = '종목을 선택해 주세요.';
-    el.voteResult.textContent = 'BUY: 0 · HOLD: 0 · SELL: 0';
-    return;
-  }
-  const v = state.votes[state.selected] || { buy: 0, hold: 0, sell: 0 };
-  el.voteTarget.textContent = `${state.selected} 투표 현황`;
-  el.voteResult.textContent = `BUY: ${v.buy} · HOLD: ${v.hold} · SELL: ${v.sell}`;
+function ensureVoteShape(ticker){
+  if(!state.votes[ticker]) state.votes[ticker] = {};
+  VOTERS.forEach(v => { if(!state.votes[ticker][v]) state.votes[ticker][v] = 'hold'; });
 }
 
-function renderPortfolio() {
-  el.portfolioList.innerHTML = '';
-  el.recordList.innerHTML = '';
-  el.count.textContent = `${state.holdings.length}개`;
-  el.emptyPortfolio.classList.toggle('hidden', state.holdings.length > 0);
-  el.emptyRecords.classList.toggle('hidden', state.holdings.length > 0);
-
-  let totalValue = 0;
-  let totalCost = 0;
-
-  state.holdings.forEach((h, i) => {
-    const current = Number(state.prices[h.ticker] || 0);
-    const value = current * h.quantity;
-    const cost = h.buyPrice * h.quantity;
-    const pnl = value - cost;
-    const pnlPct = cost ? (pnl / cost) * 100 : 0;
-    totalValue += value;
-    totalCost += cost;
-
-    const item = document.createElement('li');
-    item.className = `rounded-lg border p-3 transition ${state.selected === h.ticker ? 'border-indigo-400 bg-slate-800' : 'border-slate-700 hover:border-slate-500'}`;
-    item.innerHTML = `
-      <div class="flex justify-between items-center gap-2">
-        <button class="text-left flex-1" data-select="${h.ticker}">
-          <div class="font-semibold">${h.ticker}</div>
-          <div class="text-xs text-slate-400 mt-1">매수가 ${formatMoney(h.buyPrice)} · 수량 ${h.quantity}</div>
-        </button>
-        <button data-remove="${i}" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-rose-600">삭제</button>
+function renderVotes(){
+  if(!state.selected){ el.voteTarget.textContent='종목을 선택해 주세요.'; el.voteSummary.textContent='BUY: 0 · HOLD: 0 · SELL: 0'; el.voterGrid.innerHTML=''; return; }
+  ensureVoteShape(state.selected);
+  const vt = state.votes[state.selected];
+  el.voteTarget.textContent = `${state.selected} · 7명 개별 투표`;
+  el.voterGrid.innerHTML = VOTERS.map(v => `
+    <div class="rounded-lg border border-slate-200 p-2">
+      <div class="text-xs mb-1 text-slate-600">${v}</div>
+      <div class="grid grid-cols-3 gap-1">
+        <button data-voter="${v}" data-vote="buy" class="vote-btn px-2 py-1 text-xs rounded ${vt[v]==='buy'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-700'}">BUY</button>
+        <button data-voter="${v}" data-vote="hold" class="vote-btn px-2 py-1 text-xs rounded ${vt[v]==='hold'?'bg-amber-600 text-white':'bg-amber-100 text-amber-700'}">HOLD</button>
+        <button data-voter="${v}" data-vote="sell" class="vote-btn px-2 py-1 text-xs rounded ${vt[v]==='sell'?'bg-rose-600 text-white':'bg-rose-100 text-rose-700'}">SELL</button>
       </div>
-      <div class="text-xs mt-2 flex justify-between"><span>현재가 ${formatMoney(current)}</span><span class="${cls(pnlPct)}">${formatPct(pnlPct)}</span></div>`;
-    el.portfolioList.appendChild(item);
+    </div>`).join('');
+  const vals = Object.values(vt);
+  const buy = vals.filter(v=>v==='buy').length, hold = vals.filter(v=>v==='hold').length, sell = vals.filter(v=>v==='sell').length;
+  el.voteSummary.textContent = `BUY: ${buy} · HOLD: ${hold} · SELL: ${sell}`;
 
-    const rec = document.createElement('li');
-    rec.className = 'rounded-lg border border-slate-700 p-2.5';
-    rec.innerHTML = `<div class="flex justify-between text-sm"><span>${h.ticker}</span><span class="${cls(pnl)}">${formatMoney(pnl)}</span></div><div class="text-xs ${cls(pnlPct)}">${formatPct(pnlPct)}</div>`;
+  document.querySelectorAll('.vote-btn').forEach(b=>b.addEventListener('click',()=>{
+    state.votes[state.selected][b.dataset.voter] = b.dataset.vote;
+    save(); renderVotes();
+  }));
+}
+
+function renderPortfolio(){
+  el.portfolioList.innerHTML=''; el.recordList.innerHTML='';
+  el.count.textContent = `${state.holdings.length}개`;
+  el.emptyPortfolio.classList.toggle('hidden', state.holdings.length>0); el.emptyRecords.classList.toggle('hidden', state.holdings.length>0);
+  let totalValue=0,totalCost=0;
+  state.holdings.forEach((h,i)=>{
+    const current=Number(state.prices[h.ticker]||0), value=current*h.quantity, cost=h.buyPrice*h.quantity, pnl=value-cost, pct=cost?(pnl/cost)*100:0;
+    totalValue+=value; totalCost+=cost;
+    const li=document.createElement('li');
+    li.className=`rounded-lg border p-3 ${state.selected===h.ticker?'border-indigo-400 bg-indigo-50':'border-slate-200'}`;
+    li.innerHTML=`<div class="flex justify-between"><button data-select="${h.ticker}" class="text-left"><div class="font-semibold">${h.ticker}</div><div class="text-xs text-slate-500">매수가 ${formatMoney(h.buyPrice)} · 수량 ${h.quantity}</div></button><button data-remove="${i}" class="text-xs px-2 py-1 rounded bg-slate-200">삭제</button></div><div class="text-xs mt-2 flex justify-between"><span>현재가 ${formatMoney(current)}</span><span class="${cls(pct)}">${formatPct(pct)}</span></div>`;
+    el.portfolioList.appendChild(li);
+
+    const rec=document.createElement('li'); rec.className='rounded-lg border border-slate-200 p-2.5';
+    rec.innerHTML=`<div class="flex justify-between text-sm"><span>${h.ticker}</span><span class="${cls(pnl)}">${formatMoney(pnl)}</span></div><div class="text-xs ${cls(pct)}">${formatPct(pct)}</div>`;
     el.recordList.appendChild(rec);
   });
+  const tp=totalValue-totalCost,tpct=totalCost?(tp/totalCost)*100:0;
+  el.totalValue.textContent=formatMoney(totalValue);
+  el.totalPnl.innerHTML=`총 수익금: <span class="${cls(tp)}">${formatMoney(tp)}</span> (<span class="${cls(tpct)}">${formatPct(tpct)}</span>)`;
 
-  const tp = totalValue - totalCost;
-  const tpct = totalCost ? (tp / totalCost) * 100 : 0;
-  el.totalValue.textContent = formatMoney(totalValue);
-  el.totalPnl.innerHTML = `총 수익금: <span class="${cls(tp)}">${formatMoney(tp)}</span> (<span class="${cls(tpct)}">${formatPct(tpct)}</span>)`;
-
-  el.portfolioList.querySelectorAll('[data-select]').forEach(b => b.addEventListener('click', () => selectTicker(b.dataset.select)));
-  el.portfolioList.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', async () => {
-    state.holdings.splice(Number(b.dataset.remove), 1);
-    if (state.holdings.length === 0) state.selected = null;
-    else if (!state.holdings.find(x => x.ticker === state.selected)) state.selected = state.holdings[0].ticker;
-    save();
-    renderPortfolio();
-    renderVotes();
-    if (state.selected) await refreshSelected();
-    else { el.chartTitle.textContent = '종목을 선택하세요'; el.priceNow.textContent = '현재가: -'; drawChart([], []); }
+  el.portfolioList.querySelectorAll('[data-select]').forEach(b=>b.addEventListener('click',()=>selectTicker(b.dataset.select)));
+  el.portfolioList.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',async()=>{
+    state.holdings.splice(Number(b.dataset.remove),1);
+    if(!state.holdings.length) state.selected=null; else if(!state.holdings.find(x=>x.ticker===state.selected)) state.selected=state.holdings[0].ticker;
+    save(); renderPortfolio(); renderVotes();
+    if(state.selected) await refreshSelected(); else { el.chartTitle.textContent='종목을 선택하세요'; el.priceNow.textContent='현재가: -'; drawChart([],[]); }
   }));
 }
 
-async function refreshAllQuotes() {
-  if (API_KEY === 'YOUR_API_KEY_HERE' || !state.holdings.length) return;
-  const tickers = [...new Set(state.holdings.map(h => h.ticker))];
-  await Promise.all(tickers.map(async (t) => {
-    try { state.prices[t] = await fetchQuote(t); } catch (_) {}
-  }));
+async function refreshAllQuotes(){
+  if(API_KEY==='YOUR_API_KEY_HERE' || !state.holdings.length) return;
+  await Promise.all([...new Set(state.holdings.map(h=>h.ticker))].map(async t=>{ try{ state.prices[t]=await fetchQuote(t); }catch(e){} }));
   save();
 }
-
-async function refreshSelected() {
-  if (!state.selected) return;
-  el.chartTitle.textContent = `${state.selected} 가격 차트`;
-
-  if (API_KEY === 'YOUR_API_KEY_HERE') {
-    el.apiHint.classList.remove('hidden');
-    el.priceNow.textContent = '현재가: API 키를 입력해 주세요.';
-    drawChart([], []);
-    return;
-  }
-
-  el.apiHint.classList.add('hidden');
-  setLoading(true);
-  try {
-    const [price, candles] = await Promise.all([fetchQuote(state.selected), fetchCandles(state.selected)]);
-    state.prices[state.selected] = price;
-    save();
-    const labels = candles.t.map(t => new Date(t * 1000).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }));
-    drawChart(labels, candles.c);
-    el.priceNow.textContent = `현재가: ${formatMoney(price)}`;
-    el.lastUpdated.textContent = `업데이트: ${new Date().toLocaleString('ko-KR')}`;
-  } catch (e) {
-    el.priceNow.textContent = `오류: ${e.message}`;
-    drawChart([], []);
-  } finally {
-    setLoading(false);
-    renderPortfolio();
-  }
+async function refreshSelected(){
+  if(!state.selected) return;
+  el.chartTitle.textContent=`${state.selected} 가격 차트`;
+  if(API_KEY==='YOUR_API_KEY_HERE'){ el.apiHint.classList.remove('hidden'); el.priceNow.textContent='현재가: API 키를 입력해 주세요.'; drawChart([],[]); return; }
+  el.apiHint.classList.add('hidden'); setLoading(true);
+  try{
+    const [price,c] = await Promise.all([fetchQuote(state.selected), fetchCandles(state.selected)]);
+    state.prices[state.selected]=price; save();
+    drawChart(c.t.map(t=>new Date(t*1000).toLocaleDateString('ko-KR',{month:'short',day:'numeric'})), c.c);
+    el.priceNow.textContent=`현재가: ${formatMoney(price)}`; el.lastUpdated.textContent=`업데이트: ${new Date().toLocaleString('ko-KR')}`;
+  }catch(e){ el.priceNow.textContent=`오류: ${e.message}`; drawChart([],[]); }
+  finally{ setLoading(false); renderPortfolio(); }
 }
+async function selectTicker(t){ state.selected=t; save(); renderPortfolio(); renderVotes(); await refreshSelected(); }
 
-async function selectTicker(ticker) { state.selected = ticker; save(); renderPortfolio(); renderVotes(); await refreshSelected(); }
-
-document.getElementById('openModal').addEventListener('click', () => document.getElementById('modal').classList.replace('hidden', 'flex'));
-document.getElementById('closeModal').addEventListener('click', () => document.getElementById('modal').classList.replace('flex', 'hidden'));
-
-document.getElementById('addForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+let searchTimer;
+el.searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = el.searchInput.value.trim();
+  state.searchPick = null;
+  el.selectedSymbol.textContent = '선택된 종목: 없음';
+  if (q.length < 2) { el.searchResults.classList.add('hidden'); el.searchResults.innerHTML = ''; return; }
+  if (API_KEY === 'YOUR_API_KEY_HERE') { el.formError.textContent = '검색 기능은 API 키 입력 후 사용 가능합니다.'; el.formError.classList.remove('hidden'); return; }
   el.formError.classList.add('hidden');
-  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
-  const buyPrice = Number(document.getElementById('buyPrice').value);
-  const quantity = Number(document.getElementById('quantity').value);
-
-  if (!ticker || !/^[A-Z.]{1,10}$/.test(ticker) || buyPrice <= 0 || quantity <= 0) {
-    el.formError.textContent = '티커 형식/구매가/수량을 확인해 주세요.';
-    el.formError.classList.remove('hidden');
-    return;
-  }
-
-  const existing = state.holdings.find((h) => h.ticker === ticker && Number(h.buyPrice) === buyPrice);
-  if (existing) existing.quantity += quantity;
-  else state.holdings.push({ ticker, buyPrice, quantity });
-  if (!state.votes[ticker]) state.votes[ticker] = { buy: 0, hold: 0, sell: 0 };
-  state.selected = ticker;
-  save();
-
-  e.target.reset();
-  document.getElementById('closeModal').click();
-  renderPortfolio(); renderVotes();
-  await refreshAllQuotes();
-  await refreshSelected();
+  searchTimer = setTimeout(async () => {
+    try {
+      state.searchResults = await searchSymbols(q);
+      if (!state.searchResults.length) { el.searchResults.classList.remove('hidden'); el.searchResults.innerHTML = '<li class="p-2 text-sm text-slate-500">검색 결과 없음</li>'; return; }
+      el.searchResults.innerHTML = state.searchResults.map(r => `<li><button type="button" class="w-full text-left p-2 hover:bg-slate-100" data-symbol="${r.symbol}">${r.symbol} <span class="text-slate-500 text-xs">${r.description}</span></button></li>`).join('');
+      el.searchResults.classList.remove('hidden');
+      el.searchResults.querySelectorAll('[data-symbol]').forEach(btn => btn.addEventListener('click', () => {
+        const sym = btn.dataset.symbol;
+        const found = state.searchResults.find(x => x.symbol === sym);
+        state.searchPick = sym;
+        el.searchInput.value = `${sym} - ${found.description}`;
+        el.selectedSymbol.textContent = `선택된 종목: ${sym}`;
+        el.searchResults.classList.add('hidden');
+      }));
+    } catch (e) {
+      el.formError.textContent = '종목 검색 중 오류가 발생했습니다.';
+      el.formError.classList.remove('hidden');
+    }
+  }, 350);
 });
 
-document.getElementById('refreshBtn').addEventListener('click', async () => {
-  setLoading(true);
-  await refreshAllQuotes();
-  await refreshSelected();
-  setLoading(false);
+document.getElementById('openModal').addEventListener('click',()=>{document.getElementById('modal').classList.replace('hidden','flex');});
+document.getElementById('closeModal').addEventListener('click',()=>{document.getElementById('modal').classList.replace('flex','hidden'); el.searchResults.classList.add('hidden');});
+
+document.getElementById('addForm').addEventListener('submit', async (e)=>{
+  e.preventDefault(); el.formError.classList.add('hidden');
+  const ticker = state.searchPick; const buyPrice = Number(document.getElementById('buyPrice').value); const quantity = Number(document.getElementById('quantity').value);
+  if(!ticker || buyPrice<=0 || quantity<=0){ el.formError.textContent='검색으로 종목 선택 후 가격/수량을 입력해 주세요.'; el.formError.classList.remove('hidden'); return; }
+  const ex = state.holdings.find(h => h.ticker===ticker && Number(h.buyPrice)===buyPrice);
+  if(ex) ex.quantity += quantity; else state.holdings.push({ticker,buyPrice,quantity});
+  ensureVoteShape(ticker);
+  state.selected=ticker; save();
+  e.target.reset(); state.searchPick=null; el.selectedSymbol.textContent='선택된 종목: 없음';
+  document.getElementById('closeModal').click(); renderPortfolio(); renderVotes(); await refreshAllQuotes(); await refreshSelected();
 });
 
-document.querySelectorAll('.vote-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    if (!state.selected) return;
-    const key = btn.dataset.vote;
-    if (!state.votes[state.selected]) state.votes[state.selected] = { buy: 0, hold: 0, sell: 0 };
-    state.votes[state.selected][key] += 1;
-    save();
-    renderVotes();
-  });
-});
+document.getElementById('refreshBtn').addEventListener('click', async()=>{ setLoading(true); await refreshAllQuotes(); await refreshSelected(); setLoading(false); });
 
-(async function init() {
-  renderPortfolio();
-  renderVotes();
-  drawChart([], []);
-  if (state.holdings.length) {
-    if (!state.selected) state.selected = state.holdings[0].ticker;
-    await refreshAllQuotes();
-    await refreshSelected();
-  }
-})();
+(async function init(){ renderPortfolio(); renderVotes(); drawChart([],[]); if(state.holdings.length){ if(!state.selected) state.selected=state.holdings[0].ticker; await refreshAllQuotes(); await refreshSelected(); } })();
 </script>
 </body>
 </html>
