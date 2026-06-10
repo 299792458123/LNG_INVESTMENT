@@ -6,34 +6,48 @@
   <title>개인 주식 포트폴리오 대시보드</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root { color-scheme: dark; }
-body { min-height: 100vh; background: #ffffff; }    .glass { background: rgba(15, 23, 42, .78); border: 1px solid rgba(148,163,184,.2); backdrop-filter: blur(10px); }
+    body { min-height: 100vh; background: #0f172a; }
+    .glass { background: rgba(15,23,42,.78); border: 1px solid rgba(148,163,184,.2); backdrop-filter: blur(10px); }
     .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
     .scroll::-webkit-scrollbar-thumb { background: rgba(100,116,139,.6); border-radius: 999px; }
+    #db-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; gap: 14px; }
+    #db-overlay.hidden { display: none; }
+    .spinner { width: 38px; height: 38px; border: 3px solid rgba(129,140,248,.25); border-top-color: #818cf8; border-radius: 50%; animation: spin .75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="text-slate-100">
+
+  <!-- DB 초기화 로딩 오버레이 -->
+  <div id="db-overlay">
+    <div class="spinner"></div>
+    <p class="text-slate-300 text-sm">데이터베이스 연결 중...</p>
+  </div>
+
   <div class="p-4 md:p-6">
     <header class="mb-5 flex items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold tracking-tight">개인 주식 포트폴리오 대시보드</h1>
-        <p class="text-slate-400 text-sm mt-1">No-Install · 단일 index.html · localStorage 저장</p>
+        <p class="text-slate-400 text-sm mt-1">Supabase DB · Finnhub API · 실시간 주가</p>
       </div>
       <div class="text-right text-xs text-slate-300">
         <div id="lastUpdated">업데이트 대기 중</div>
-        <div id="apiHint" class="text-amber-300 mt-1 hidden">API 키를 입력하세요</div>
+        <div id="dbStatus" class="text-slate-400 mt-1">DB 연결 중...</div>
       </div>
     </header>
 
     <main class="grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-6 min-h-[78vh]">
+
+      <!-- 포트폴리오 패널 -->
       <section class="glass rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
         <div>
           <p class="text-slate-400 text-sm">총 자산 (Total Value)</p>
           <p id="totalValue" class="text-2xl font-bold mt-1">$0.00</p>
           <p id="totalPnl" class="text-sm text-slate-300 mt-1">총 수익금: $0.00 (0.00%)</p>
         </div>
-
         <div class="flex-1 min-h-0">
           <div class="flex justify-between items-center mb-2">
             <h2 class="font-semibold">보유 주식</h2>
@@ -42,10 +56,10 @@ body { min-height: 100vh; background: #ffffff; }    .glass { background: rgba(15
           <ul id="portfolioList" class="space-y-2 max-h-[45vh] overflow-auto pr-1 scroll"></ul>
           <p id="emptyPortfolio" class="text-slate-400 text-sm mt-2">추가된 종목이 없습니다.</p>
         </div>
-
-        <button id="openModal" class="w-full rounded-lg py-2.5 bg-indigo-500 hover:bg-indigo-400 font-semibold">+ 종목 추가</button>
+        <button id="openModal" class="w-full rounded-lg py-2.5 bg-indigo-500 hover:bg-indigo-400 font-semibold transition">+ 종목 추가</button>
       </section>
 
+      <!-- 차트 패널 -->
       <section class="glass rounded-2xl p-4 xl:col-span-6 flex flex-col">
         <div class="flex items-center justify-between mb-4 gap-2">
           <div>
@@ -54,7 +68,7 @@ body { min-height: 100vh; background: #ffffff; }    .glass { background: rgba(15
           </div>
           <div class="flex items-center gap-2">
             <span id="loading" class="hidden text-xs text-yellow-300">로딩 중...</span>
-            <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm">새로고침</button>
+            <button id="refreshBtn" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm transition">새로고침</button>
           </div>
         </div>
         <div class="relative flex-1 min-h-[320px]">
@@ -62,6 +76,7 @@ body { min-height: 100vh; background: #ffffff; }    .glass { background: rgba(15
         </div>
       </section>
 
+      <!-- 수익 기록 + 투표 패널 -->
       <section class="glass rounded-2xl p-4 xl:col-span-3 flex flex-col gap-4">
         <div class="flex-1 min-h-0">
           <h2 class="font-semibold mb-2">수익 기록</h2>
@@ -72,119 +87,206 @@ body { min-height: 100vh; background: #ffffff; }    .glass { background: rgba(15
           <h2 class="font-semibold">투표 (현재 종목)</h2>
           <p id="voteTarget" class="text-slate-400 text-sm mt-1 mb-3">종목을 선택해 주세요.</p>
           <div class="grid grid-cols-3 gap-2 mb-2">
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500" data-vote="buy">구매</button>
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-500" data-vote="hold">유지</button>
-            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-rose-600 hover:bg-rose-500" data-vote="sell">판매</button>
+            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 transition" data-vote="buy">구매</button>
+            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-500 transition" data-vote="hold">유지</button>
+            <button class="vote-btn rounded-lg py-2 text-sm font-semibold bg-rose-600 hover:bg-rose-500 transition" data-vote="sell">판매</button>
           </div>
           <p id="voteResult" class="text-xs text-slate-300">BUY: 0 · HOLD: 0 · SELL: 0</p>
         </div>
       </section>
+
     </main>
   </div>
 
+  <!-- 종목 추가 모달 -->
   <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50 p-4">
     <div class="glass w-full max-w-md rounded-2xl p-5">
       <h3 class="text-lg font-semibold mb-4">종목 추가</h3>
       <form id="addForm" class="space-y-3">
         <div>
           <label class="text-sm text-slate-300">티커 (예: AAPL)</label>
-          <input id="ticker" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 uppercase" required maxlength="10" />
+          <input id="ticker" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 uppercase focus:outline-none focus:border-indigo-400" required maxlength="10" />
         </div>
         <div>
           <label class="text-sm text-slate-300">구매가</label>
-          <input id="buyPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2" required />
+          <input id="buyPrice" type="number" min="0" step="0.01" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 focus:outline-none focus:border-indigo-400" required />
         </div>
         <div>
           <label class="text-sm text-slate-300">수량</label>
-          <input id="quantity" type="number" min="0.0001" step="0.0001" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2" required />
+          <input id="quantity" type="number" min="0.0001" step="0.0001" class="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 focus:outline-none focus:border-indigo-400" required />
         </div>
         <p id="formError" class="hidden text-rose-300 text-sm"></p>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" id="closeModal" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600">취소</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 font-semibold">저장</button>
+          <button type="button" id="closeModal" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition">취소</button>
+          <button type="submit" id="submitBtn" class="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 font-semibold transition">저장</button>
         </div>
       </form>
     </div>
   </div>
 
-<script>git push - u origin main
-const API_KEY = 'YOUR_API_KEY_HERE';
-const BASE_URL = 'https://finnhub.io/api/v1';
-const KEYS = {
-  holdings: 'stocks_dashboard_holdings_v3',
-  prices: 'stocks_dashboard_prices_v3',
-  selected: 'stocks_dashboard_selected_v3',
-  votes: 'stocks_dashboard_votes_v3'
-};
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  ① 설정값 교체 — 아래 두 줄만 본인 값으로 변경하세요
+//  SUPABASE_URL  : Supabase Dashboard → Settings → API → Project URL
+//  SUPABASE_ANON_KEY : Supabase Dashboard → Settings → API → anon public key
+//  Finnhub API 키는 Edge Function Secret에 저장 (코드에 노출 없음)
+//  → supabase secrets set FINNHUB_API_KEY=실제_키_입력
+// ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL      = 'https://brgujpmzhpfekynejilk.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// ══════════════════════════════════════════════════════════════════
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 주가 캐시만 localStorage 사용 (휘발성 데이터)
+const PRICE_CACHE_KEY = 'stocks_dash_prices_v4';
 
 const state = {
-  holdings: JSON.parse(localStorage.getItem(KEYS.holdings) || '[]'),
-  prices: JSON.parse(localStorage.getItem(KEYS.prices) || '{}'),
-  selected: localStorage.getItem(KEYS.selected) || null,
-  votes: JSON.parse(localStorage.getItem(KEYS.votes) || '{}'),
-  chart: null
+  holdings: [],   // DB에서 로드
+  prices:   JSON.parse(localStorage.getItem(PRICE_CACHE_KEY) || '{}'),
+  selected: null,
+  votes:    {},   // DB에서 로드
+  chart:    null
 };
 
+// ── DOM 참조 ──────────────────────────────────────────────────────
 const el = {
-  totalValue: document.getElementById('totalValue'),
-  totalPnl: document.getElementById('totalPnl'),
-  count: document.getElementById('count'),
-  portfolioList: document.getElementById('portfolioList'),
-  recordList: document.getElementById('recordList'),
+  totalValue:     document.getElementById('totalValue'),
+  totalPnl:       document.getElementById('totalPnl'),
+  count:          document.getElementById('count'),
+  portfolioList:  document.getElementById('portfolioList'),
+  recordList:     document.getElementById('recordList'),
   emptyPortfolio: document.getElementById('emptyPortfolio'),
-  emptyRecords: document.getElementById('emptyRecords'),
-  chartTitle: document.getElementById('chartTitle'),
-  priceNow: document.getElementById('priceNow'),
-  loading: document.getElementById('loading'),
-  lastUpdated: document.getElementById('lastUpdated'),
-  voteTarget: document.getElementById('voteTarget'),
-  voteResult: document.getElementById('voteResult'),
-  formError: document.getElementById('formError'),
-  apiHint: document.getElementById('apiHint')
+  emptyRecords:   document.getElementById('emptyRecords'),
+  chartTitle:     document.getElementById('chartTitle'),
+  priceNow:       document.getElementById('priceNow'),
+  loading:        document.getElementById('loading'),
+  lastUpdated:    document.getElementById('lastUpdated'),
+  voteTarget:     document.getElementById('voteTarget'),
+  voteResult:     document.getElementById('voteResult'),
+  formError:      document.getElementById('formError'),
+  dbStatus:       document.getElementById('dbStatus'),
+  dbOverlay:      document.getElementById('db-overlay')
 };
 
-const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n || 0));
-const formatPct = (n) => `${(Number(n || 0)).toFixed(2)}%`;
-const cls = (n) => n > 0 ? 'text-emerald-400' : n < 0 ? 'text-rose-400' : 'text-slate-300';
+// ── 유틸 함수 ─────────────────────────────────────────────────────
+const fmt$   = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n || 0));
+const fmtPct = n => `${Number(n || 0).toFixed(2)}%`;
+const clr    = n => n > 0 ? 'text-emerald-400' : n < 0 ? 'text-rose-400' : 'text-slate-300';
 
-function save() {
-  localStorage.setItem(KEYS.holdings, JSON.stringify(state.holdings));
-  localStorage.setItem(KEYS.prices, JSON.stringify(state.prices));
-  localStorage.setItem(KEYS.votes, JSON.stringify(state.votes));
-  if (state.selected) localStorage.setItem(KEYS.selected, state.selected);
+function savePriceCache() {
+  localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(state.prices));
 }
 
-function setLoading(flag) {
-  el.loading.classList.toggle('hidden', !flag);
-  document.getElementById('refreshBtn').disabled = flag;
+// ── Supabase DB — 보유 종목 ───────────────────────────────────────
+
+async function loadHoldings() {
+  const { data, error } = await sb.from('holdings').select('*').order('created_at');
+  if (error) throw error;
+  state.holdings = (data || []).map(r => ({
+    id:       r.id,
+    ticker:   r.ticker,
+    buyPrice: Number(r.buy_price),
+    quantity: Number(r.quantity)
+  }));
 }
+
+async function dbAddHolding(ticker, buyPrice, quantity) {
+  const existing = state.holdings.find(
+    h => h.ticker === ticker && Number(h.buyPrice) === buyPrice
+  );
+  if (existing) {
+    // 같은 매수가면 수량 합산
+    const newQty = existing.quantity + quantity;
+    const { error } = await sb.from('holdings').update({ quantity: newQty }).eq('id', existing.id);
+    if (error) throw error;
+    existing.quantity = newQty;
+  } else {
+    const { data, error } = await sb.from('holdings')
+      .insert({ ticker, buy_price: buyPrice, quantity })
+      .select().single();
+    if (error) throw error;
+    state.holdings.push({ id: data.id, ticker, buyPrice, quantity });
+    if (!state.votes[ticker]) state.votes[ticker] = { buy: 0, hold: 0, sell: 0 };
+  }
+}
+
+async function dbRemoveHolding(id) {
+  const { error } = await sb.from('holdings').delete().eq('id', id);
+  if (error) throw error;
+  state.holdings = state.holdings.filter(h => h.id !== id);
+}
+
+// ── Supabase DB — 투표 ────────────────────────────────────────────
+
+async function loadVotes() {
+  const { data, error } = await sb.from('votes').select('*');
+  if (error) throw error;
+  state.votes = {};
+  (data || []).forEach(r => {
+    state.votes[r.ticker] = { buy: r.buy_count, hold: r.hold_count, sell: r.sell_count };
+  });
+}
+
+async function dbSaveVote(ticker) {
+  const v = state.votes[ticker] || { buy: 0, hold: 0, sell: 0 };
+  const { error } = await sb.from('votes').upsert(
+    { ticker, buy_count: v.buy, hold_count: v.hold, sell_count: v.sell },
+    { onConflict: 'ticker' }
+  );
+  if (error) throw error;
+}
+
+// ── Edge Function → Finnhub API 호출 ─────────────────────────────
+// Finnhub API 키는 Edge Function 서버 내부 Secret에 저장됩니다.
+// 브라우저에 API 키가 노출되지 않습니다.
 
 async function fetchQuote(symbol) {
-  const res = await fetch(`${BASE_URL}/quote?symbol=${encodeURIComponent(symbol)}&token=${API_KEY}`);
-  if (!res.ok) throw new Error('현재가 조회 실패');
-  const data = await res.json();
+  const { data, error } = await sb.functions.invoke('dashboard-api', {
+    body: { path: 'quote', symbol }
+  });
+  if (error) throw new Error('현재가 조회 실패: ' + error.message);
   if (typeof data.c !== 'number') throw new Error('유효하지 않은 가격 데이터');
   return data.c;
 }
 
 async function fetchCandles(symbol) {
-  const to = Math.floor(Date.now() / 1000);
-  const from = to - 60 * 60 * 24 * 45;
-  const res = await fetch(`${BASE_URL}/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
-  if (!res.ok) throw new Error('차트 데이터 조회 실패');
-  const data = await res.json();
+  const to   = Math.floor(Date.now() / 1000);
+  const from = to - 60 * 60 * 24 * 45; // 45일
+  const { data, error } = await sb.functions.invoke('dashboard-api', {
+    body: { path: 'candle', symbol, from, to, resolution: 'D' }
+  });
+  if (error) throw new Error('차트 조회 실패: ' + error.message);
   if (data.s !== 'ok') throw new Error('차트 데이터 없음');
   return data;
 }
 
+// ── 로딩 상태 ─────────────────────────────────────────────────────
+function setLoading(flag) {
+  el.loading.classList.toggle('hidden', !flag);
+  document.getElementById('refreshBtn').disabled = flag;
+}
+
+// ── 차트 ─────────────────────────────────────────────────────────
 function drawChart(labels = [], prices = []) {
   const ctx = document.getElementById('stockChart').getContext('2d');
   if (state.chart) state.chart.destroy();
   state.chart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ data: prices, borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,.2)', fill: true, tension: .25, pointRadius: 0 }] },
+    data: {
+      labels,
+      datasets: [{
+        data: prices,
+        borderColor: '#818cf8',
+        backgroundColor: 'rgba(129,140,248,.18)',
+        fill: true,
+        tension: .25,
+        pointRadius: 0
+      }]
+    },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(71,85,105,.2)' } },
@@ -194,6 +296,7 @@ function drawChart(labels = [], prices = []) {
   });
 }
 
+// ── 투표 렌더링 ───────────────────────────────────────────────────
 function renderVotes() {
   if (!state.selected) {
     el.voteTarget.textContent = '종목을 선택해 주세요.';
@@ -205,91 +308,123 @@ function renderVotes() {
   el.voteResult.textContent = `BUY: ${v.buy} · HOLD: ${v.hold} · SELL: ${v.sell}`;
 }
 
+// ── 포트폴리오 렌더링 ─────────────────────────────────────────────
 function renderPortfolio() {
   el.portfolioList.innerHTML = '';
-  el.recordList.innerHTML = '';
+  el.recordList.innerHTML    = '';
   el.count.textContent = `${state.holdings.length}개`;
   el.emptyPortfolio.classList.toggle('hidden', state.holdings.length > 0);
-  el.emptyRecords.classList.toggle('hidden', state.holdings.length > 0);
+  el.emptyRecords.classList.toggle('hidden',   state.holdings.length > 0);
 
-  let totalValue = 0;
-  let totalCost = 0;
+  let totalValue = 0, totalCost = 0;
 
-  state.holdings.forEach((h, i) => {
+  state.holdings.forEach(h => {
     const current = Number(state.prices[h.ticker] || 0);
-    const value = current * h.quantity;
-    const cost = h.buyPrice * h.quantity;
-    const pnl = value - cost;
-    const pnlPct = cost ? (pnl / cost) * 100 : 0;
+    const value   = current * h.quantity;
+    const cost    = h.buyPrice * h.quantity;
+    const pnl     = value - cost;
+    const pnlPct  = cost ? (pnl / cost) * 100 : 0;
     totalValue += value;
-    totalCost += cost;
+    totalCost  += cost;
 
+    // 보유 목록 항목
     const item = document.createElement('li');
-    item.className = `rounded-lg border p-3 transition ${state.selected === h.ticker ? 'border-indigo-400 bg-slate-800' : 'border-slate-700 hover:border-slate-500'}`;
+    item.className = `rounded-lg border p-3 transition-colors ${
+      state.selected === h.ticker
+        ? 'border-indigo-400 bg-slate-800'
+        : 'border-slate-700 hover:border-slate-500'
+    }`;
     item.innerHTML = `
       <div class="flex justify-between items-center gap-2">
         <button class="text-left flex-1" data-select="${h.ticker}">
           <div class="font-semibold">${h.ticker}</div>
-          <div class="text-xs text-slate-400 mt-1">매수가 ${formatMoney(h.buyPrice)} · 수량 ${h.quantity}</div>
+          <div class="text-xs text-slate-400 mt-1">매수가 ${fmt$(h.buyPrice)} · 수량 ${h.quantity}</div>
         </button>
-        <button data-remove="${i}" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-rose-600">삭제</button>
+        <button data-remove-id="${h.id}" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-rose-600 transition-colors">삭제</button>
       </div>
-      <div class="text-xs mt-2 flex justify-between"><span>현재가 ${formatMoney(current)}</span><span class="${cls(pnlPct)}">${formatPct(pnlPct)}</span></div>`;
+      <div class="text-xs mt-2 flex justify-between">
+        <span>현재가 ${fmt$(current)}</span>
+        <span class="${clr(pnlPct)}">${fmtPct(pnlPct)}</span>
+      </div>`;
     el.portfolioList.appendChild(item);
 
+    // 수익 기록 항목
     const rec = document.createElement('li');
     rec.className = 'rounded-lg border border-slate-700 p-2.5';
-    rec.innerHTML = `<div class="flex justify-between text-sm"><span>${h.ticker}</span><span class="${cls(pnl)}">${formatMoney(pnl)}</span></div><div class="text-xs ${cls(pnlPct)}">${formatPct(pnlPct)}</div>`;
+    rec.innerHTML = `
+      <div class="flex justify-between text-sm">
+        <span>${h.ticker}</span>
+        <span class="${clr(pnl)}">${fmt$(pnl)}</span>
+      </div>
+      <div class="text-xs ${clr(pnlPct)}">${fmtPct(pnlPct)}</div>`;
     el.recordList.appendChild(rec);
   });
 
-  const tp = totalValue - totalCost;
+  const tp   = totalValue - totalCost;
   const tpct = totalCost ? (tp / totalCost) * 100 : 0;
-  el.totalValue.textContent = formatMoney(totalValue);
-  el.totalPnl.innerHTML = `총 수익금: <span class="${cls(tp)}">${formatMoney(tp)}</span> (<span class="${cls(tpct)}">${formatPct(tpct)}</span>)`;
+  el.totalValue.textContent = fmt$(totalValue);
+  el.totalPnl.innerHTML = `총 수익금: <span class="${clr(tp)}">${fmt$(tp)}</span> (<span class="${clr(tpct)}">${fmtPct(tpct)}</span>)`;
 
-  el.portfolioList.querySelectorAll('[data-select]').forEach(b => b.addEventListener('click', () => selectTicker(b.dataset.select)));
-  el.portfolioList.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', async () => {
-    state.holdings.splice(Number(b.dataset.remove), 1);
-    if (state.holdings.length === 0) state.selected = null;
-    else if (!state.holdings.find(x => x.ticker === state.selected)) state.selected = state.holdings[0].ticker;
-    save();
+  // 이벤트 바인딩
+  el.portfolioList.querySelectorAll('[data-select]').forEach(b =>
+    b.addEventListener('click', () => selectTicker(b.dataset.select))
+  );
+  el.portfolioList.querySelectorAll('[data-remove-id]').forEach(b =>
+    b.addEventListener('click', () => removeHolding(b.dataset.removeId))
+  );
+}
+
+// ── 종목 삭제 ─────────────────────────────────────────────────────
+async function removeHolding(id) {
+  try {
+    await dbRemoveHolding(id);
+    if (!state.holdings.length) {
+      state.selected = null;
+    } else if (!state.holdings.find(x => x.ticker === state.selected)) {
+      state.selected = state.holdings[0].ticker;
+    }
     renderPortfolio();
     renderVotes();
-    if (state.selected) await refreshSelected();
-    else { el.chartTitle.textContent = '종목을 선택하세요'; el.priceNow.textContent = '현재가: -'; drawChart([], []); }
-  }));
+    if (state.selected) {
+      await refreshSelected();
+    } else {
+      el.chartTitle.textContent = '종목을 선택하세요';
+      el.priceNow.textContent   = '현재가: -';
+      drawChart([], []);
+    }
+  } catch (e) {
+    console.error('삭제 오류:', e);
+    alert('삭제 중 오류가 발생했습니다.\n' + e.message);
+  }
 }
 
+// ── 전체 시세 새로고침 ────────────────────────────────────────────
 async function refreshAllQuotes() {
-  if (API_KEY === 'YOUR_API_KEY_HERE' || !state.holdings.length) return;
+  if (!state.holdings.length) return;
   const tickers = [...new Set(state.holdings.map(h => h.ticker))];
-  await Promise.all(tickers.map(async (t) => {
+  await Promise.all(tickers.map(async t => {
     try { state.prices[t] = await fetchQuote(t); } catch (_) {}
   }));
-  save();
+  savePriceCache();
 }
 
+// ── 선택 종목 차트 새로고침 ───────────────────────────────────────
 async function refreshSelected() {
   if (!state.selected) return;
   el.chartTitle.textContent = `${state.selected} 가격 차트`;
-
-  if (API_KEY === 'YOUR_API_KEY_HERE') {
-    el.apiHint.classList.remove('hidden');
-    el.priceNow.textContent = '현재가: API 키를 입력해 주세요.';
-    drawChart([], []);
-    return;
-  }
-
-  el.apiHint.classList.add('hidden');
   setLoading(true);
   try {
-    const [price, candles] = await Promise.all([fetchQuote(state.selected), fetchCandles(state.selected)]);
+    const [price, candles] = await Promise.all([
+      fetchQuote(state.selected),
+      fetchCandles(state.selected)
+    ]);
     state.prices[state.selected] = price;
-    save();
-    const labels = candles.t.map(t => new Date(t * 1000).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }));
+    savePriceCache();
+    const labels = candles.t.map(ts =>
+      new Date(ts * 1000).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+    );
     drawChart(labels, candles.c);
-    el.priceNow.textContent = `현재가: ${formatMoney(price)}`;
+    el.priceNow.textContent    = `현재가: ${fmt$(price)}`;
     el.lastUpdated.textContent = `업데이트: ${new Date().toLocaleString('ko-KR')}`;
   } catch (e) {
     el.priceNow.textContent = `오류: ${e.message}`;
@@ -300,38 +435,60 @@ async function refreshSelected() {
   }
 }
 
-async function selectTicker(ticker) { state.selected = ticker; save(); renderPortfolio(); renderVotes(); await refreshSelected(); }
+// ── 종목 선택 ─────────────────────────────────────────────────────
+async function selectTicker(ticker) {
+  state.selected = ticker;
+  renderPortfolio();
+  renderVotes();
+  await refreshSelected();
+}
 
-document.getElementById('openModal').addEventListener('click', () => document.getElementById('modal').classList.replace('hidden', 'flex'));
-document.getElementById('closeModal').addEventListener('click', () => document.getElementById('modal').classList.replace('flex', 'hidden'));
+// ── 모달 이벤트 ───────────────────────────────────────────────────
+document.getElementById('openModal').addEventListener('click', () =>
+  document.getElementById('modal').classList.replace('hidden', 'flex')
+);
+document.getElementById('closeModal').addEventListener('click', () =>
+  document.getElementById('modal').classList.replace('flex', 'hidden')
+);
 
-document.getElementById('addForm').addEventListener('submit', async (e) => {
+// ── 종목 추가 폼 ──────────────────────────────────────────────────
+document.getElementById('addForm').addEventListener('submit', async e => {
   e.preventDefault();
   el.formError.classList.add('hidden');
-  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+
+  const ticker   = document.getElementById('ticker').value.trim().toUpperCase();
   const buyPrice = Number(document.getElementById('buyPrice').value);
   const quantity = Number(document.getElementById('quantity').value);
 
   if (!ticker || !/^[A-Z.]{1,10}$/.test(ticker) || buyPrice <= 0 || quantity <= 0) {
-    el.formError.textContent = '티커 형식/구매가/수량을 확인해 주세요.';
+    el.formError.textContent = '티커 형식 / 구매가 / 수량을 확인해 주세요.';
     el.formError.classList.remove('hidden');
     return;
   }
 
-  const existing = state.holdings.find((h) => h.ticker === ticker && Number(h.buyPrice) === buyPrice);
-  if (existing) existing.quantity += quantity;
-  else state.holdings.push({ ticker, buyPrice, quantity });
-  if (!state.votes[ticker]) state.votes[ticker] = { buy: 0, hold: 0, sell: 0 };
-  state.selected = ticker;
-  save();
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled    = true;
+  submitBtn.textContent = '저장 중...';
 
-  e.target.reset();
-  document.getElementById('closeModal').click();
-  renderPortfolio(); renderVotes();
-  await refreshAllQuotes();
-  await refreshSelected();
+  try {
+    await dbAddHolding(ticker, buyPrice, quantity);
+    state.selected = ticker;
+    e.target.reset();
+    document.getElementById('closeModal').click();
+    renderPortfolio();
+    renderVotes();
+    await refreshAllQuotes();
+    await refreshSelected();
+  } catch (err) {
+    el.formError.textContent = 'DB 오류: ' + err.message;
+    el.formError.classList.remove('hidden');
+  } finally {
+    submitBtn.disabled    = false;
+    submitBtn.textContent = '저장';
+  }
 });
 
+// ── 새로고침 버튼 ─────────────────────────────────────────────────
 document.getElementById('refreshBtn').addEventListener('click', async () => {
   setLoading(true);
   await refreshAllQuotes();
@@ -339,23 +496,43 @@ document.getElementById('refreshBtn').addEventListener('click', async () => {
   setLoading(false);
 });
 
-document.querySelectorAll('.vote-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
+// ── 투표 버튼 ─────────────────────────────────────────────────────
+document.querySelectorAll('.vote-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
     if (!state.selected) return;
     const key = btn.dataset.vote;
-    if (!state.votes[state.selected]) state.votes[state.selected] = { buy: 0, hold: 0, sell: 0 };
+    if (!state.votes[state.selected])
+      state.votes[state.selected] = { buy: 0, hold: 0, sell: 0 };
     state.votes[state.selected][key] += 1;
-    save();
     renderVotes();
+    try {
+      await dbSaveVote(state.selected);
+    } catch (e) {
+      console.error('투표 저장 오류:', e);
+    }
   });
 });
 
+// ── 초기화 ────────────────────────────────────────────────────────
 (async function init() {
+  try {
+    await Promise.all([loadHoldings(), loadVotes()]);
+    el.dbStatus.textContent = '● DB 연결됨';
+    el.dbStatus.className   = 'text-emerald-400 mt-1 text-xs';
+  } catch (e) {
+    el.dbStatus.textContent = '● DB 오류: ' + e.message;
+    el.dbStatus.className   = 'text-rose-400 mt-1 text-xs';
+    console.error('DB 초기화 오류:', e);
+  } finally {
+    el.dbOverlay.classList.add('hidden');
+  }
+
   renderPortfolio();
   renderVotes();
   drawChart([], []);
+
   if (state.holdings.length) {
-    if (!state.selected) state.selected = state.holdings[0].ticker;
+    state.selected = state.holdings[0].ticker;
     await refreshAllQuotes();
     await refreshSelected();
   }
